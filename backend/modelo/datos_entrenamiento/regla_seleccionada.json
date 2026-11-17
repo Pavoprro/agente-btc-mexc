@@ -1,0 +1,24 @@
+{
+ "regla": "Al cierre de t: comprar (100 %) si el rendimiento estimado para t+1 > 0.05%; si no, efectivo. Ejecutar en la apertura de t+1.",
+ "umbral": 0.0005,
+ "modelo": "Regresión lineal (20 rezagos)",
+ "elegido_con": "VA (rendimiento neto; empate: menor drawdown)",
+ "rendimiento_neto_VA_%": 29.580975984760972,
+ "max_drawdown_VA_%": -23.467784534711416,
+ "operaciones_VA": 102,
+ "win_rate_VA_%": 54.90196078431373,
+ "dias_invertido_VA_%": 67.72009029345372,
+ "costos_VA": 20924.426747871566,
+ "comprar_y_mantener_VA_%": 65.73503822271407,
+ "max_drawdown_comprar_y_mantener_VA_%": -28.095286188117218,
+ "supera_comprar_y_mantener": false,
+ "umbrales_probados": [
+  0.0005,
+  0.001,
+  0.002,
+  0.003,
+  0.005
+ ],
+ "primera_ejecucion": "2024-06-04",
+ "ultima_fecha": "2025-08-20"
+}

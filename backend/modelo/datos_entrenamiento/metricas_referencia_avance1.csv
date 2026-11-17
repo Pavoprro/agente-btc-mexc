@@ -1,0 +1,5 @@
+modelo,conjunto,MAE,RMSE,MAE_vs_cero_%
+Cero,TR,0.023393,0.035165,0.0
+Cero,VA,0.017261,0.024354,0.0
+Regresión lineal (20 rezagos),TR,0.023325,0.034876,-0.291289
+Regresión lineal (20 rezagos),VA,0.01732,0.024277,0.343385
