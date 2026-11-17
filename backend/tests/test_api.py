@@ -18,20 +18,20 @@ def cliente(cfg, modelo, precios):
 
 def test_salud_es_publica(cliente):
     c, _ = cliente
-    r = c.get("/salud")
+    r = c.get("/api/salud")
     assert r.status_code == 200 and r.json()["modelo"]["version"] == "v1"
     assert "deshabilitadas" in r.json()["paper"]["ordenes_reales"]
 
 
 def test_pronostico_sin_clave_401(cliente):
     c, _ = cliente
-    assert c.get("/pronostico").status_code == 401
-    assert c.get("/pronostico", headers={"X-API-Key": "incorrecta"}).status_code == 401
+    assert c.get("/api/pronostico").status_code == 401
+    assert c.get("/api/pronostico", headers={"X-API-Key": "incorrecta"}).status_code == 401
 
 
 def test_pronostico_con_clave(cliente, modelo, ventanas):
     c, velas = cliente
-    r = c.get("/pronostico", headers=CLAVE)
+    r = c.get("/api/pronostico", headers=CLAVE)
     assert r.status_code == 200
     cuerpo = r.json()
     assert cuerpo["fecha_vela"] == velas[-1].fecha and cuerpo["senal_regla"] in ("comprar", "efectivo")
@@ -46,5 +46,5 @@ def test_pronostico_503_sin_dato(cfg, modelo):
     def falla():
         raise ErrorDatos("MEXC sin respuesta válida tras 3 intentos")
     c = TestClient(crear_app(cfg, modelo, obtener_velas=falla))
-    r = c.get("/pronostico", headers=CLAVE)
+    r = c.get("/api/pronostico", headers=CLAVE)
     assert r.status_code == 503 and "3 intentos" in r.json()["detail"]

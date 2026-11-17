@@ -1,35 +1,37 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { api, claveGuardada, guardarClave, ErrorApi, type Pronostico, type Salud } from './api'
+import { api, claveInicial, guardarClave, olvidarClave, ErrorApi, type Pronostico, type Salud } from './api'
+import TiraDias from './components/TiraDias.vue'
 
 const salud = ref<Salud | null>(null)
-const errorSalud = ref('')
-const clave = ref(claveGuardada())
+const sinBackend = ref('')
+const clave = ref('')
+const autenticado = ref(false)
 const pron = ref<Pronostico | null>(null)
 const cargando = ref(false)
 const error = ref('')
-const ultimaConsulta = ref('')
+const consultadoA = ref('')
 
-const pct = (x: number, d = 2) => `${x >= 0 ? '+' : ''}${(100 * x).toFixed(d)} %`
-const usdt = (x: number) => x.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const pct = (x: number, d = 2) => `${x > 0 ? '+' : x < 0 ? '−' : ''}${Math.abs(100 * x).toFixed(d)} %`
+const num = (x: number, d = 2) => x.toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d })
+const fechaLarga = (iso: string) =>
+  new Date(iso + 'T00:00:00Z').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
-const rezagos = computed(() => {
-  if (!pron.value) return []
-  return Object.entries(pron.value.variables).map(([k, v]) => ({ k: k.replace('r_lag', 't−'), v }))
-})
+const rendimientoHoy = computed(() => (pron.value ? pron.value.variables.r_lag0 ?? 0 : 0))
+const rango = computed(() => (pron.value ? (pron.value.maximo - pron.value.minimo) / pron.value.apertura : 0))
 
 async function cargarSalud() {
   try {
     salud.value = await api.salud()
-    errorSalud.value = ''
+    sinBackend.value = ''
   } catch (e) {
-    errorSalud.value = e instanceof ErrorApi ? e.message : String(e)
+    sinBackend.value = e instanceof ErrorApi ? e.message : String(e)
   }
 }
 
 async function consultar() {
-  if (!clave.value) {
-    error.value = 'escribe la clave de la API'
+  if (!clave.value.trim()) {
+    error.value = 'Escribe la clave de la API para consultar.'
     return
   }
   guardarClave(clave.value)
@@ -37,73 +39,122 @@ async function consultar() {
   error.value = ''
   try {
     pron.value = await api.pronostico(clave.value)
-    ultimaConsulta.value = new Date().toLocaleTimeString('es-MX')
+    autenticado.value = true
+    consultadoA.value = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
   } catch (e) {
     pron.value = null
-    error.value = e instanceof ErrorApi ? `${e.status || 'red'} · ${e.message}` : String(e)
+    if (e instanceof ErrorApi && e.status === 401) {
+      autenticado.value = false
+      error.value = 'Clave rechazada. Es la API_KEY del archivo backend/.env.'
+    } else if (e instanceof ErrorApi && e.status === 503) {
+      error.value = `MEXC no dio un dato válido, así que no se pronostica: ${e.message.replace('sin dato válido: ', '')}`
+    } else {
+      error.value = e instanceof ErrorApi ? e.message : String(e)
+    }
   } finally {
     cargando.value = false
   }
 }
 
-onMounted(cargarSalud)
+function salir() {
+  olvidarClave()
+  clave.value = ''
+  autenticado.value = false
+  pron.value = null
+}
+
+onMounted(async () => {
+  await cargarSalud()
+  clave.value = claveInicial()
+  if (clave.value && !sinBackend.value) consultar()
+})
 </script>
 
 <template>
-  <header>
-    <h1>Agente BTC/USDT · MEXC · Paper</h1>
-    <p class="sub">Escalón 1 · datos de MEXC validados → modelo versionado → pronóstico. Sin órdenes reales.</p>
-  </header>
-
-  <main>
-    <section class="tarjeta">
-      <h2>Backend</h2>
-      <p v-if="errorSalud" class="error">{{ errorSalud }}</p>
-      <dl v-else-if="salud">
-        <dt>Activo</dt><dd>{{ salud.activo }} · velas {{ salud.intervalo }}</dd>
-        <dt>Modelo</dt><dd>{{ salud.modelo.nombre }} ({{ salud.modelo.version }}) · RMSE VA {{ salud.modelo.RMSE_VA.toFixed(6) }} vs cero {{ salud.modelo.RMSE_cero_VA.toFixed(6) }}</dd>
-        <dt>Entrenado hasta</dt><dd>{{ salud.modelo.entrenado_hasta }} · datos sha256 {{ salud.modelo.sha256_datos }}…</dd>
-        <dt>LLM local</dt><dd>{{ salud.llm.modelo ?? 'apagado (solo regla del Avance 3)' }}</dd>
-        <dt>Paper</dt><dd>{{ usdt(salud.paper.capital_inicial) }} USDT · costo {{ (100 * salud.paper.costo).toFixed(2) }} % · órdenes reales {{ salud.paper.ordenes_reales }}</dd>
-        <dt>Hora</dt><dd>{{ salud.hora_utc }} · backend {{ salud.backend }}</dd>
-      </dl>
-      <p v-else>Consultando…</p>
-      <button class="secundario" @click="cargarSalud">Actualizar</button>
-    </section>
-
-    <section class="tarjeta">
-      <h2>Pronóstico</h2>
-      <form @submit.prevent="consultar" class="fila">
-        <label>
-          Clave de la API
-          <input v-model="clave" type="password" autocomplete="off" placeholder="X-API-Key" />
-        </label>
-        <button type="submit" :disabled="cargando">{{ cargando ? 'Consultando…' : 'Consultar MEXC' }}</button>
-      </form>
-      <p v-if="error" class="error">{{ error }}</p>
-
-      <div v-if="pron" class="resultado">
-        <div class="grande" :class="pron.senal_regla">
-          <span class="etiqueta">Rendimiento estimado para la siguiente vela</span>
-          <strong>{{ pct(pron.estimado, 3) }}</strong>
-          <span class="senal">señal de la regla: <b>{{ pron.senal_regla }}</b> (umbral {{ pct(pron.umbral, 2) }})</span>
-        </div>
-        <dl>
-          <dt>Última vela cerrada</dt><dd>{{ pron.fecha_vela }} · cierre {{ usdt(pron.cierre) }} USDT · cerró {{ pron.vela_cerrada_utc }}</dd>
-          <dt>Modelo</dt><dd>{{ pron.modelo.nombre }} · {{ pron.modelo.version }}</dd>
-          <dt>Latencia</dt><dd>{{ pron.latencia_ms }} ms · consultado a las {{ ultimaConsulta }}</dd>
-        </dl>
-        <h3>Las 20 variables (rendimiento diario, del más reciente al más viejo)</h3>
-        <ul class="rezagos">
-          <li v-for="r in rezagos" :key="r.k" :class="r.v >= 0 ? 'pos' : 'neg'">
-            <span>{{ r.k }}</span><b>{{ pct(r.v) }}</b>
-          </li>
-        </ul>
+  <div class="pantalla">
+    <header class="barra">
+      <div class="marca">
+        <span class="punto" :class="sinBackend ? 'rojo' : 'verde'" aria-hidden="true"></span>
+        <strong>Agente BTC/USDT</strong>
+        <span class="suave">MEXC · velas diarias · Paper</span>
       </div>
-    </section>
-  </main>
+      <form v-if="!autenticado" class="acceso" @submit.prevent="consultar">
+        <input v-model="clave" type="password" autocomplete="off" placeholder="Clave de la API" aria-label="Clave de la API" />
+        <button type="submit" :disabled="cargando">{{ cargando ? 'Entrando…' : 'Entrar' }}</button>
+      </form>
+      <div v-else class="acceso">
+        <span class="suave">sesión abierta</span>
+        <button type="button" class="fantasma" @click="salir">Salir</button>
+      </div>
+    </header>
 
-  <footer>
-    Juan Pablo Escalera Boites · Ciencia de Datos Aplicada a la Economía · Ibero León · 2026. El pronóstico no es una recomendación.
-  </footer>
+    <p v-if="sinBackend" class="aviso rojo-texto">{{ sinBackend }}</p>
+    <p v-else-if="error" class="aviso rojo-texto">{{ error }}</p>
+
+    <section class="hero" :class="{ vacio: !pron }">
+      <article class="numero">
+        <p class="ceja">Última vela cerrada <span v-if="pron">· {{ fechaLarga(pron.fecha_vela) }}</span></p>
+        <p class="cifra">
+          <template v-if="pron">{{ num(pron.cierre) }}<small>USDT</small></template>
+          <template v-else>—</template>
+        </p>
+        <p v-if="pron" class="pie">
+          <span :class="rendimientoHoy >= 0 ? 'sube' : 'baja'">{{ pct(rendimientoHoy) }}</span> en el día ·
+          abrió {{ num(pron.apertura, 0) }} · rango {{ pct(rango) }} · cerró {{ pron.vela_cerrada_utc.slice(11, 16) }} UTC
+        </p>
+        <p v-else class="pie">Entra con la clave para consultar MEXC.</p>
+      </article>
+
+      <article class="numero">
+        <p class="ceja">Pronóstico del modelo para la siguiente vela</p>
+        <p class="cifra" :class="pron ? (pron.estimado >= 0 ? 'sube' : 'baja') : ''">
+          <template v-if="pron">{{ pct(pron.estimado, 3) }}</template>
+          <template v-else>—</template>
+        </p>
+        <p v-if="pron" class="pie">
+          <span class="senal" :class="pron.senal_regla">{{ pron.senal_regla === 'comprar' ? 'Comprar' : 'Quedarse en efectivo' }}</span>
+          regla del Avance 3: comprar si supera {{ pct(pron.umbral) }} · {{ pron.latencia_ms }} ms · {{ consultadoA }}
+        </p>
+        <p v-else class="pie">{{ salud ? salud.modelo.nombre + ' · ' + salud.modelo.version : '' }}</p>
+      </article>
+    </section>
+
+    <section class="tira">
+      <div class="tira-cabeza">
+        <h2>Los 20 días que ve el modelo</h2>
+        <p class="suave">rendimiento diario de cierre a cierre, del más viejo al más reciente. La barra rayada es el estimado de mañana y la rayita ámbar, el umbral de la regla ({{ pron ? pct(pron.umbral) : '+0.05 %' }}).</p>
+      </div>
+      <div v-if="pron" class="tira-lienzo"><TiraDias :variables="pron.variables" :estimado="pron.estimado" :umbral="pron.umbral" /></div>
+      <div v-else class="tira-vacia" aria-hidden="true"><span v-for="i in 21" :key="i"></span></div>
+    </section>
+
+    <section class="fichas">
+      <article class="ficha">
+        <h2>Modelo</h2>
+        <dl v-if="salud">
+          <div><dt>Qué es</dt><dd>{{ salud.modelo.nombre }} · {{ salud.modelo.version }}</dd></div>
+          <div><dt>Error en validación</dt><dd><code>{{ salud.modelo.RMSE_VA.toFixed(6) }}</code> RMSE, contra <code>{{ salud.modelo.RMSE_cero_VA.toFixed(6) }}</code> del pronóstico cero</dd></div>
+          <div><dt>Entrenado hasta</dt><dd>{{ salud.modelo.entrenado_hasta }}</dd></div>
+          <div><dt>Cómo se eligió</dt><dd>{{ salud.modelo.seleccion }}</dd></div>
+          <div><dt>Huella de los datos</dt><dd><code>{{ salud.modelo.sha256_datos }}…</code></dd></div>
+        </dl>
+      </article>
+      <article class="ficha">
+        <h2>Paper y riesgo</h2>
+        <dl v-if="salud">
+          <div><dt>Capital</dt><dd>{{ num(salud.paper.capital_inicial, 0) }} USDT · costo {{ (100 * salud.paper.costo).toFixed(2) }} % por operación</dd></div>
+          <div><dt>Exposición máxima</dt><dd>{{ (100 * salud.paper.exposicion_max).toFixed(0) }} % del patrimonio, sin apalancamiento ni cortos</dd></div>
+          <div><dt>Pérdida diaria máxima</dt><dd>{{ (100 * salud.paper.perdida_diaria_max).toFixed(0) }} %: al pasarla se bloquean órdenes nuevas</dd></div>
+          <div><dt>Dato más viejo aceptado</dt><dd>{{ salud.paper.max_antiguedad_h }} h desde el cierre de la vela</dd></div>
+          <div><dt>Órdenes reales</dt><dd>{{ salud.paper.ordenes_reales }}</dd></div>
+          <div><dt>LLM local</dt><dd>{{ salud.llm.modelo ?? 'apagado: decide la regla del Avance 3' }}</dd></div>
+        </dl>
+      </article>
+    </section>
+
+    <footer>
+      Juan Pablo Escalera Boites · Ciencia de Datos Aplicada a la Economía · Ibero León · 2026 · backend {{ salud?.backend ?? '—' }} · escalón 1.
+      Es un simulador: el pronóstico no es una recomendación.
+    </footer>
+  </div>
 </template>

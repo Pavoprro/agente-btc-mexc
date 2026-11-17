@@ -12,5 +12,11 @@
 - Panel: muestra backend, modelo, última vela cerrada, estimado, señal de la regla y las 20 variables. Pide la clave al usuario.
 - 16 pruebas en pytest, sin red. Consulta en vivo: vela del 2026-11-16, cierre 64,875.64, estimado +0.0908 %, señal comprar, 797 ms.
 
+## 2026-11-17 · panel y arranque
+- La API queda bajo `/api/*` y el backend sirve `frontend/dist` en `/`: un solo proceso para todo.
+- `arrancar.bat`: prepara entorno, modelo, `.env` con clave generada, panel compilado, arranca y abre el navegador con la clave en el fragmento de la URL.
+- Panel rediseñado: dos cifras grandes (última vela cerrada y pronóstico), tira SVG de los 20 rendimientos que ve el modelo más la barra rayada del estimado y la marca del umbral, fichas de modelo y de Paper/riesgo. IBM Plex Sans + Mono. Sin librerías de gráficas.
+- Se revisó en 1280 px y en ancho de celular; los errores 401 y 503 se muestran con texto que dice qué hacer.
+
 ## Siguiente
 - Escalón 2: Paper + riesgo + SQLite + ciclo diario + iniciar / pausar / detener / liquidar en backend y panel.

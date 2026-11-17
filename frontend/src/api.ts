@@ -1,4 +1,4 @@
-// Cliente de la API del backend. La clave vive en memoria (sessionStorage) mientras la pestaña está abierta.
+// Cliente de la API del backend. La clave vive en sessionStorage mientras la pestaña está abierta; nunca en el código.
 
 export interface Salud {
   estado: string
@@ -7,7 +7,7 @@ export interface Salud {
   intervalo: string
   modelo: { version: string; nombre: string; entradas: number; RMSE_VA: number; RMSE_cero_VA: number; entrenado_hasta: string; sha256_datos: string; seleccion: string }
   llm: { modelo: string | null; url: string }
-  paper: { capital_inicial: number; costo: number; ordenes_reales: string }
+  paper: { capital_inicial: number; costo: number; exposicion_max: number; perdida_diaria_max: number; max_antiguedad_h: number; ordenes_reales: string }
   hora_utc: string
 }
 
@@ -15,6 +15,10 @@ export interface Pronostico {
   activo: string
   fecha_vela: string
   cierre: number
+  apertura: number
+  maximo: number
+  minimo: number
+  volumen: number
   vela_cerrada_utc: string
   estimado: number
   'estimado_%': number
@@ -35,7 +39,16 @@ export class ErrorApi extends Error {
 
 const BASE = '/api'
 
-export function claveGuardada(): string {
+/** La clave puede llegar una sola vez en el fragmento de la URL (#clave=…), que nunca viaja al servidor:
+ *  así arrancar.bat abre el panel ya autenticado en la misma máquina. Se guarda y se borra de la barra. */
+export function claveInicial(): string {
+  const m = location.hash.match(/clave=([^&]+)/)
+  if (m) {
+    const clave = decodeURIComponent(m[1]!)
+    guardarClave(clave)
+    history.replaceState(null, '', location.pathname)
+    return clave
+  }
   try {
     return sessionStorage.getItem('clave') ?? ''
   } catch {
@@ -51,6 +64,14 @@ export function guardarClave(clave: string) {
   }
 }
 
+export function olvidarClave() {
+  try {
+    sessionStorage.removeItem('clave')
+  } catch {
+    /* nada */
+  }
+}
+
 async function pedir<T>(ruta: string, clave?: string, init: RequestInit = {}): Promise<T> {
   const cabeceras: Record<string, string> = { Accept: 'application/json' }
   if (clave) cabeceras['X-API-Key'] = clave
@@ -58,7 +79,7 @@ async function pedir<T>(ruta: string, clave?: string, init: RequestInit = {}): P
   try {
     r = await fetch(BASE + ruta, { ...init, headers: cabeceras })
   } catch {
-    throw new ErrorApi(0, 'no se pudo hablar con el backend (¿está corriendo en el puerto 8765?)')
+    throw new ErrorApi(0, 'No hay conexión con el backend. Arranca arrancar.bat o uvicorn en el puerto 8765.')
   }
   const cuerpo = await r.json().catch(() => ({}))
   if (!r.ok) throw new ErrorApi(r.status, cuerpo.detail ?? r.statusText)

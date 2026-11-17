@@ -37,7 +37,14 @@ Vue 3 + TS (panel)  ──X-API-Key──▶  FastAPI (backend)
                                        └─ registro.py   SQLite: bitácora y estado (paso 7)                   [pendiente]
 ```
 
-## Instalar y correr
+## Prenderlo (Windows): doble clic en `arrancar.bat`
+
+Hace todo solo: crea el entorno de Python e instala dependencias la primera vez, exporta el modelo si falta, genera `backend/.env`
+con una clave nueva, instala y compila el panel, arranca el backend en http://localhost:8765 y abre el navegador ya con la clave
+puesta (la clave viaja una sola vez en el fragmento `#clave=…` de la URL, que nunca sale del navegador; el panel la guarda en la
+pestaña y la borra de la barra). Para apagarlo, cierra la ventana negra. Necesita Python 3.11+ y Node 20+ instalados.
+
+## Instalar y correr a mano (o en Linux / mac)
 
 Backend (Python 3.11 o más nuevo):
 ```bash
@@ -47,18 +54,19 @@ pip install -r requirements.txt
 python modelo/exportar.py          # regenera modelo/v1/modelo.json y comprueba que reproduce el RMSE de VA de la práctica (0.024277)
 python -m pytest                   # 16 pruebas, sin red
 cp .env.example .env               # poner API_KEY (mínimo 16 caracteres); el .env no se sube
-uvicorn app.main:crear_app --factory --port 8765
+uvicorn app.main:crear_app --factory --port 8765      # API en /api/*, docs en /docs; si existe frontend/dist sirve el panel en /
 ```
 Panel:
 ```bash
 cd frontend
 npm install
-npm run dev                        # http://localhost:5173 (reenvía /api al backend)
+npm run build                      # genera dist/, que el backend sirve en http://localhost:8765
+npm run dev                        # o modo desarrollo en http://localhost:5173 (reenvía /api al backend)
 ```
 Probar a mano:
 ```bash
-curl localhost:8765/salud
-curl -H "X-API-Key: <tu clave>" localhost:8765/pronostico
+curl localhost:8765/api/salud
+curl -H "X-API-Key: <tu clave>" localhost:8765/api/pronostico
 ```
 
 ## Estado (bitácora en `docs/BITACORA.md`)
