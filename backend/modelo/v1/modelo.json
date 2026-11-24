@@ -30,7 +30,7 @@
   "definicion": "r_lag{k} = close(t-k) / close(t-k-1) - 1, rendimiento simple diario; t = fecha de la última vela CERRADA (emisión). r_lag0 es el rendimiento del propio día t; r_lag19 el de hace 19 días. Hacen falta 21 cierres consecutivos.",
   "objetivo": "y = close(t+1) / close(t) - 1 (rendimiento del día siguiente a la emisión)",
   "escalado": "StandardScaler en X y en y ajustados solo con TR; la salida se desescala",
-  "formula": "estimado = y_media + y_desv * (intercepto + sum_k coef[k] * (r_lag[k] - x_media[k]) / x_desv[k])"
+  "formula": "estimado = y_media + y_desv * (intercepto + sum_k coef[k] * (x[k] - x_media[k]) / x_desv[k])"
  },
  "parametros": {
   "coef": [
@@ -116,14 +116,17 @@
   "RMSE_TR": 0.03487642957783612,
   "RMSE_VA": 0.024276943861315264,
   "RMSE_VA_practica": 0.024277,
-  "RMSE_cero_VA": 0.024354
+  "RMSE_cero_VA": 0.02435382039944126,
+  "RMSE_TE": 0.022528760271538082,
+  "RMSE_cero_TE": 0.022377863475739383,
+  "nota_TE": "TE se evaluó una sola vez en el Avance 5; aquí solo se verifica que coincide"
  },
  "regla_avance3": {
   "umbral": 0.0005,
   "texto": "Al cierre de t: comprar (100 %) si el rendimiento estimado para t+1 > 0.05%; si no, efectivo. Ejecutar en la apertura de t+1.",
   "rendimiento_neto_VA_%": 29.580975984760972
  },
- "exportado_utc": "2026-11-17 19:46",
+ "exportado_utc": "2026-11-24 20:17",
  "librerias_al_exportar": {
   "numpy": "2.5.5",
   "pandas": "3.1.1",

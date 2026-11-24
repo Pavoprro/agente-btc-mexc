@@ -1,0 +1,22 @@
+{
+ "C": {
+  "umbral": 0.001,
+  "rendimiento_neto_%": 32.439895808615724,
+  "max_drawdown_%": -20.64190375928637,
+  "operaciones": 114.0,
+  "win_rate_%": 50.877192982456144,
+  "dias_invertido_%": 46.27539503386004,
+  "costos_totales": 24468.823698291824
+ },
+ "D": {
+  "umbral": 0.0005,
+  "rendimiento_neto_%": 19.8799676086008,
+  "max_drawdown_%": -16.734379301673513,
+  "operaciones": 61.0,
+  "win_rate_%": 54.09836065573771,
+  "dias_invertido_%": 32.95711060948081,
+  "costos_totales": 13287.486432843512
+ },
+ "version_pronostico": "B: rezagos + 2 indicadores",
+ "elegido_con": "VA (rendimiento neto; empate: menor drawdown)"
+}

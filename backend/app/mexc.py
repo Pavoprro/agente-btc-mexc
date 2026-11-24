@@ -27,6 +27,10 @@ class Vela:
     def fecha(self) -> str:
         return datetime.fromtimestamp(self.apertura_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
 
+    @property
+    def cerrada_utc(self) -> str:
+        return datetime.fromtimestamp(self.cierre_ms / 1000, tz=timezone.utc).isoformat(timespec="seconds")
+
 
 def _parsear(fila) -> Vela:
     # MEXC v3: [open_time, open, high, low, close, volume, close_time, quote_volume]
