@@ -33,6 +33,11 @@
 - Ciclo en vivo (24-nov, 14:21 León): vela del 2026-11-23, cierre 61,279.98, estimado −0.27 %, dist_sma20 −10.7 % → mantener en efectivo, 556 ms; repetir → duplicado; sin clave → 401.
 - De los nueve errores del §15 ya quedan demostrados en pruebas: API sin respuesta, dato atrasado, JSON inválido (propuesta), clave incorrecta, saldo insuficiente, evento duplicado, reinicio del backend, botón de detención. Falta Ollama detenido (escalón 3), que ya tiene su ruta de respaldo.
 
+## 2026-11-24 · escalón 2 (panel)
+- Panel migrado de Vue a **React 19 + TypeScript** (la rúbrica dice "UI React y TypeScript"; la recomendación de Vue fue verbal) con el mismo diseño: `App.tsx`, `components/TiraDias.tsx`, `api.ts` con todos los endpoints, `tsc -b` en el build.
+- Nueva ficha "El agente en Paper": modo (activo / pausado / detenido), patrimonio, efectivo, posición, operaciones y Win Rate, último ciclo (propuesta → acción de riesgo → motivo), botones Iniciar / Pausar / Detener / Correr un ciclo ahora / Liquidar posición (con confirmación). Estado y bitácora se refrescan cada minuto.
+- Nueva sección de bitácora: una línea por vela procesada (cierre, estimado, propuesta y fuente, acción, motivo, posición, patrimonio) y los últimos errores.
+- Revisado en 1280 px y en ancho de celular con el backend sirviendo `dist/`.
+
 ## Siguiente
-- Panel: migrar a React + TypeScript (la rúbrica lo nombra así) conservando el diseño, con estado de la cuenta, botones iniciar / pausar / detener / liquidar y bitácora.
 - Escalón 3: Ollama local (`app/llm.py`) con esquema JSON, registro de modelo, hardware y tiempo, y clave en el gateway.

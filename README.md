@@ -16,7 +16,7 @@ El agente es individual.
 
 | Capa | Qué uso | Para qué |
 |---|---|---|
-| UI | **Vue 3 + TypeScript + Vite** | panel: activo, fecha de datos, pronóstico, variables, acción propuesta, estado de riesgo, posición y patrimonio; iniciar / pausar / detener |
+| UI | **React 19 + TypeScript + Vite** | panel: activo, fecha de datos, pronóstico, variables, acción propuesta, motivo del riesgo, posición y patrimonio; botones iniciar / pausar / detener / correr ciclo / liquidar; bitácora |
 | Backend | **Python 3.11+ · FastAPI · Uvicorn · pydantic** | API documentada (`/docs`), carga el modelo y el escalador, valida entradas, coordina el ciclo |
 | Datos de mercado | **MEXC API pública** `GET /api/v3/klines` (httpx, reintentos con espera creciente) | velas diarias BTC/USDT; se descarta la vela abierta; se valida orden, continuidad, precios y antigüedad |
 | Modelo | **numpy** en producción; **scikit-learn** solo para exportar | regresión lineal con StandardScaler de X y de y, versionada: `v1` (20 rezagos, Avance 2) y **`v2`** (20 rezagos + dist_sma20 + vol20, Avance 5), en `backend/modelo/<v>/modelo.json` con contrato de variables, huella de datos y métricas |
@@ -25,12 +25,12 @@ El agente es individual.
 | Persistencia | **SQLite** (`registro.py`) | estado y cuenta, un renglón por vela procesada (clave única: no se repite ni tras reinicio), órdenes, errores y eventos de control |
 | Ciclo | `ciclo.py` + hilo programador | velas → variables → modelo → propuesta validada (pydantic) → riesgo → Paper → registro; revisa cada 5 min si cerró una vela nueva; iniciar / pausar / detener / liquidar |
 | Seguridad | API key en cabecera `X-API-Key`, `.env` fuera del repo, CORS solo al panel | la UI pide la clave al usuario; nada en variables `VITE_*` |
-| Pruebas | **pytest** (backend, sin red) · **vue-tsc** (tipos del panel) | contrato de variables, modelo, validación de velas, autenticación, API |
+| Pruebas | **pytest** (backend, sin red) · **tsc** (tipos del panel) | contrato de variables, modelo, validación de velas, autenticación, API |
 
 ## Arquitectura
 
 ```
-Vue 3 + TS (panel)  ──X-API-Key──▶  FastAPI (backend)
+React + TS (panel)  ──X-API-Key──▶  FastAPI (backend)
                                        ├─ mexc.py       velas públicas de MEXC, validadas (§15 paso 1)
                                        ├─ variables.py  20 rezagos + dist_sma20 + vol20 con la definición del entrenamiento (paso 2)
                                        ├─ modelo.py     modelo v2 (numpy) → rendimiento estimado
@@ -46,7 +46,7 @@ Vue 3 + TS (panel)  ──X-API-Key──▶  FastAPI (backend)
 Hace todo solo: crea el entorno de Python e instala dependencias la primera vez, exporta el modelo si falta, genera `backend/.env`
 con una clave nueva, instala y compila el panel, arranca el backend en http://localhost:8765 y abre el navegador ya con la clave
 puesta (la clave viaja una sola vez en el fragmento `#clave=…` de la URL, que nunca sale del navegador; el panel la guarda en la
-pestaña y la borra de la barra). Para apagarlo, cierra la ventana negra. Necesita Python 3.11+ y Node 20+ instalados.
+pestaña y la borra de la barra). Para apagarlo, cierra la ventana negra. Necesita Python 3.11+ y Node 20+ instalados. En el panel: *Iniciar* deja al agente revisando MEXC cada 5 minutos; *Correr un ciclo ahora* procesa la última vela cerrada de inmediato (una sola vez por vela).
 
 ## Instalar y correr a mano (o en Linux / mac)
 
@@ -82,13 +82,13 @@ La base queda en `backend/datos/agente.db` (fuera del repo); al reiniciar el bac
 ## Estado (bitácora en `docs/BITACORA.md`)
 
 **Escalón 1 · listo (17-nov-2026):** repo, modelo versionado, datos de MEXC validados, pronóstico detrás de API key, panel que lo muestra, 16 pruebas.
-**Escalón 2 · listo (24-nov-2026):** modelo v2 del Avance 5, motor Paper, riesgo determinista, SQLite, ciclo programado e idempotente, iniciar / pausar / detener / liquidar por API; 42 pruebas (replay de 25 velas, reinicio sin duplicar, saldo insuficiente, dato atrasado, propuesta inválida con respaldo a la regla).
+**Escalón 2 · listo (24-nov-2026):** modelo v2 del Avance 5, motor Paper, riesgo determinista, SQLite, ciclo programado e idempotente, iniciar / pausar / detener / liquidar por API y desde el panel (migrado a React + TypeScript, como nombra la rúbrica, con el mismo diseño); 42 pruebas (replay de 25 velas, reinicio sin duplicar, saldo insuficiente, dato atrasado, propuesta inválida con respaldo a la regla).
 Ciclo en vivo del 24-nov-2026: vela cerrada del 23-nov (cierre 61,279.98 USDT), estimado −0.27 %, cierre 10.7 % por debajo de la SMA20 → *mantener* en efectivo, 0.6 s; el segundo intento sobre la misma vela respondió *duplicado*.
 
 | Escalón | Qué | Estado |
 |---|---|---|
 | 1 | MEXC validado + modelo versionado + `/pronostico` con API key + panel | listo |
-| 2 | Modelo v2 + Paper (50,000 USDT, 0 %) + riesgo determinista + SQLite + ciclo diario idempotente + iniciar / pausar / detener / liquidar (API) | listo (backend); panel con botones en curso |
+| 2 | Modelo v2 + Paper (50,000 USDT, 0 %) + riesgo determinista + SQLite + ciclo diario idempotente + iniciar / pausar / detener / liquidar en API y panel (React) | listo |
 | 3 | Ollama local con propuesta JSON validada y respaldo a la regla; gateway con clave | pendiente |
 | 4 | Los nueve errores del §15 demostrados; replay de ≥ 20 ciclos; comparación sin LLM / con LLM / comprar y mantener (§16) | pendiente |
 | 5 | Informe breve, evidencia y entrega (30-nov y 1-dic-2026) | pendiente |

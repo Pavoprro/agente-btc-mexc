@@ -60,7 +60,7 @@ button.fantasma { background: transparent; color: var(--texto); border-color: va
 /* tira de 20 días (firma) */
 .tira { margin-top: 18px; border: 1px solid var(--linea); border-radius: 14px; background: var(--fondo-2); padding: 18px 20px 10px; }
 .tira-cabeza { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; flex-wrap: wrap; margin-bottom: 6px; }
-.tira h2, .ficha h2 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+.tira h2, .ficha h2, .bitacora h2 { margin: 0; font-size: 0.95rem; font-weight: 600; }
 .tira-cabeza p { margin: 0; font-size: 0.82rem; max-width: 60ch; }
 .tira-lienzo { overflow-x: auto; }
 .tira-svg { width: 100%; min-width: 720px; height: auto; display: block; font-family: var(--mono); }
@@ -93,3 +93,36 @@ button.fantasma { background: transparent; color: var(--texto); border-color: va
 footer { margin-top: 26px; font-size: 0.78rem; color: var(--suave); line-height: 1.5; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* el agente: modo, cuenta y botones de control */
+.agente { margin-top: 18px; border: 1px solid var(--linea); border-radius: 14px; background: var(--fondo-2); padding: 18px 20px; display: grid; gap: 16px; min-width: 0; }
+.agente-cabeza { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.agente h2 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+.modo { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 999px; font-weight: 500; font-size: 0.8rem; border: 1px solid var(--linea); color: var(--suave); }
+.modo.activo { color: var(--sube); border-color: rgba(74, 211, 154, 0.4); }
+.modo.pausado { color: var(--ambar); border-color: rgba(242, 193, 78, 0.4); }
+.punto.ambar { background: var(--ambar); box-shadow: 0 0 0 4px rgba(242, 193, 78, 0.15); }
+.punto.gris { background: var(--suave); }
+.botones { display: flex; gap: 8px; flex-wrap: wrap; }
+button.peligro { background: transparent; color: var(--baja); border-color: rgba(242, 122, 99, 0.5); }
+button:disabled { cursor: not-allowed; }
+.cuenta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.cuenta .dato { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--linea); border-radius: 10px; min-width: 0; }
+.cuenta .etiqueta { font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--suave); }
+.cuenta .valor { font: 500 1.45rem/1.1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.cuenta .sub { font-size: 0.8rem; }
+.ultimo { margin: 0; font-size: 0.88rem; color: var(--suave); line-height: 1.55; overflow-wrap: anywhere; }
+.ultimo strong, .ultimo em { color: var(--texto); }
+.aviso:not(.rojo-texto) { border-color: rgba(143, 184, 255, 0.4); background: rgba(143, 184, 255, 0.08); }
+
+/* bitácora */
+.bitacora { margin-top: 18px; border: 1px solid var(--linea); border-radius: 14px; background: var(--fondo-2); padding: 18px 20px; min-width: 0; }
+.bitacora-lienzo { overflow-x: auto; margin-top: 8px; }
+.bitacora table { width: 100%; border-collapse: collapse; font: 0.82rem/1.4 var(--mono); font-variant-numeric: tabular-nums; min-width: 760px; }
+.bitacora th { text-align: left; font: 600 0.72rem var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--suave); padding: 6px 10px 8px; border-bottom: 1px solid var(--linea); }
+.bitacora td { padding: 7px 10px; border-bottom: 1px solid rgba(34, 48, 74, 0.6); vertical-align: top; white-space: nowrap; }
+.bitacora td.motivo { white-space: normal; font-family: var(--sans); color: var(--suave); min-width: 240px; }
+.bitacora tr:last-child td { border-bottom: 0; }
+.bitacora .accion.comprar { color: var(--sube); font-weight: 600; }
+.bitacora .accion.vender { color: var(--baja); font-weight: 600; }
+.bitacora .ultimo { margin-top: 12px; }
